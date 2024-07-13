@@ -22,7 +22,7 @@
 #define PCLK_GPIO_NUM     22
 #define FLASH_GPIO_NUM    4
 
-void _cam_init(){
+void esp_cam_init(){
   // Initialize the camera
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -48,7 +48,7 @@ void _cam_init(){
   // FRAMESIZE_ + QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
   // config.frame_size = FRAMESIZE_SVGA;  // 800x600 
   config.frame_size = FRAMESIZE_UXGA;  // 1600x1200
-  config.jpeg_quality = 25;
+  config.jpeg_quality = 35;
   config.fb_count = 1;
 
   pinMode(FLASH_GPIO_NUM, OUTPUT);
@@ -75,9 +75,12 @@ void _cam_init(){
   s->set_hmirror(s, 1);  // 1 to flip the image horizontally
 }
 
-camera_fb_t* get_picture(){
+camera_fb_t* get_picture(bool flash){
   camera_fb_t * fb; 
-  on_flash();
+  if (flash){
+    on_flash();
+  }
+    
   for (int i=0; i<=1; i++){
     fb = esp_camera_fb_get();
     esp_camera_fb_return(fb);
@@ -86,7 +89,7 @@ camera_fb_t* get_picture(){
   if (!fb) {
     Serial.println("Camera capture failed");
     off_flash();
-    return nullptr;
+    return fb;
   }
   off_flash();
   return fb;
