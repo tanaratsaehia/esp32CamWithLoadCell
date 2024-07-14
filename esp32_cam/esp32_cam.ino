@@ -12,7 +12,7 @@ String data;
 void setup() {
   Serial.begin(115200);
   // delay(3000);
-  load_cell_init();
+  // load_cell_init();
   esp_cam_init();
 
   WiFi.begin(SSID, PASSWORD);
@@ -56,7 +56,7 @@ void loop() {
     read_CSV("/data.csv");
     millisCouting = millis();
   }
-  if (millis() % 100 == 0){
-    Serial.println("load cell : " + String(read_load_cell()));
-  }
+  // if (millis() % 100 == 0){
+  //   Serial.println("load cell : " + String(read_load_cell()));
+  // }
 }
