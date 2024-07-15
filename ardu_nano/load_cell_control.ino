@@ -39,5 +39,5 @@ float load_cell_get_calibration_factor(){
 }
 
 float get_weight(){
-  return scale.get_units(5);
+  return scale.get_units();
 }
