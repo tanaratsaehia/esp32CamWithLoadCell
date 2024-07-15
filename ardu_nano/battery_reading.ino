@@ -15,7 +15,6 @@ float get_batt_percent(){
   // Serial.println("battery Voltage :" + String(batteryVoltage));
   // Serial.println("battery percentage :" + String(percentage));
 
-
   if (percentage > 100) {
     percentage = 100;
   } else if (percentage < 0) {

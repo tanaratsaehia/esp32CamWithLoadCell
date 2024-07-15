@@ -24,8 +24,6 @@ void display_weight(uint8_t column, uint8_t row){
 
 void display_time(uint8_t column, uint8_t row){
   // not finish yet
-  lcd.setCursor(column, row);
-  // lcd.print();
 }
 
 void display_custom(String word, uint8_t column, uint8_t row){
@@ -33,3 +31,12 @@ void display_custom(String word, uint8_t column, uint8_t row){
   lcd.print(word);
 }
 
+void lcd_sleep(){
+  lcd.clear();
+  lcd.noBacklight();
+}
+
+void lcd_wake(){
+  lcd.clear();
+  lcd.backlight();
+}

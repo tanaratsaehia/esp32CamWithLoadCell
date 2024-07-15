@@ -41,3 +41,11 @@ float load_cell_get_calibration_factor(){
 float get_weight(){
   return scale.get_units();
 }
+
+void load_cell_sleep(){
+  scale.power_down();
+}
+
+void load_cell_wake(){
+  scale.power_up();
+}
