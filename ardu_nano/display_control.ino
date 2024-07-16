@@ -8,7 +8,7 @@ void lcd_init(){
   lcd.backlight();
 }
 
-void clear_lcd(){
+void clear_display(){
   lcd.clear();
 }
 
@@ -20,6 +20,15 @@ void display_battery(uint8_t column, uint8_t row){
 void display_weight(uint8_t column, uint8_t row){
   lcd.setCursor(column, row);
   lcd.print("Urine " + String(get_weight(), 1) + " ml");
+}
+
+void display_batt_and_weight(){
+  String weight = String(get_weight(), 1);
+  String battery = String(int(get_batt_percent()));
+  lcd.setCursor(1, 0);
+  lcd.print("Battery " + battery + " %");
+  lcd.setCursor(1, 1);
+  lcd.print("Urine " + weight + " ml");
 }
 
 void display_time(uint8_t column, uint8_t row){

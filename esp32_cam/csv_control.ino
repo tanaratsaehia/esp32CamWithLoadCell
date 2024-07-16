@@ -2,7 +2,20 @@
 #include <SD_MMC.h>
 #include "esp_camera.h"
 
+void sd_card_init(){
+  if (!SD_MMC.begin("/sdcard", true)) {
+    Serial.println("SD Card Mount Failed");
+    return;
+  }
+  uint8_t cardType = SD_MMC.cardType();
+  if (cardType == CARD_NONE) {
+    Serial.println("No SD card attached");
+    return;
+  }
+}
+
 void write_CSV(const char* filename, String data) {
+  Serial.println("File : " + String(filename));
   File file = SD_MMC.open(filename, FILE_APPEND);
   if (!file) {
     Serial.println("Failed to open file for appending");
@@ -61,12 +74,78 @@ void edit_CSV(const char* filename, String condition, String newValue) {
   Serial.println("Modified CSV file and updated the last column based on the condition.");
 }
 
-void add_initial_data() {
-  write_CSV("/data.csv", "2024-07-11,Example Data,123,4336");
-  write_CSV("/data.csv", "2024-07-14,Example Data,123,10357");
-  write_CSV("/data.csv", "2024-07-15,Example Data,123,24829");
-  write_CSV("/data.csv", "2024-07-10,Example Data,123,39221");
-  write_CSV("/data.csv", "2024-07-13,Example Data,123,53373");
-  write_CSV("/data.csv", "2024-07-18,Example Data,123,67285");
-  write_CSV("/data.csv", "2024-07-19,Example Data,123,80958");
+void record_data(const char* &filename, String data){
+  
+}
+
+void check_record(const String &filename){
+  if (is_file_exist(filename)){
+    Serial.println("c_file_already_exist");
+
+    while (true){
+      if (Serial.available()){
+        String command = Serial.readStringUntil('\n');
+        if (command.startsWith("c_")){
+          command = command.substring(2);
+          command.trim();
+          
+          if (command == "delete_file"){
+            SD_MMC.remove(filename);
+            Serial.println("remove file");
+            break;
+          }else if (command == "keep_file"){
+            // do nothing
+            Serial.println("keep file");
+            break;
+          }
+        }
+      }
+    }
+  }else{
+    Serial.println("c_file_created");
+  }
+}
+
+bool is_file_exist(const String &filename) {
+  // Check if the file exists
+  if (SD_MMC.exists(filename)) {
+    Serial.println("File exists.");
+
+    // Check if the file extension is ".csv"
+    if (filename.endsWith(".csv")) {
+      Serial.println("File is a CSV file.");
+      return true;
+    } else {
+      Serial.println("File is not a CSV file.");
+      return false;
+    }
+  } else {
+    Serial.println("File does not exist.");
+    return false;
+  }
+}
+
+bool delete_csv_file(const String filename){
+  if (SD_MMC.exists(filename)) {
+    // Serial.println("File exists.");
+    // Attempt to delete the file
+    if (SD_MMC.remove(filename)) {
+      // Serial.println("File deleted.");
+      return true;
+    } else {
+      // Serial.println("File deletion failed.");
+      return false;
+    }
+  } else {
+    // Serial.println("File does not exist.");
+    return false;
+  }
+}
+
+void add_initial_data(const char* filename) {
+  // csv format date,time,weight,path_pic,upload_status
+  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
+  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
+  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
+  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
 }

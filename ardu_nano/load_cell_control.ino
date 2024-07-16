@@ -1,4 +1,5 @@
 #include "HX711.h"
+// https://github.com/bogde/HX711
 
 #define LOADCELL_DOUT_PIN 5
 #define LOADCELL_SCK_PIN 6

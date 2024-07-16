@@ -60,16 +60,6 @@ void esp_cam_init(){
     ESP.restart();
   }
 
-  if (!SD_MMC.begin("/sdcard", true)) {
-    Serial.println("SD Card Mount Failed");
-    return;
-  }
-  uint8_t cardType = SD_MMC.cardType();
-  if (cardType == CARD_NONE) {
-    Serial.println("No SD card attached");
-    return;
-  }
-
   sensor_t * s = esp_camera_sensor_get();
   s->set_vflip(s, 1);  // 1 to flip the image vertically
   s->set_hmirror(s, 1);  // 1 to flip the image horizontally
