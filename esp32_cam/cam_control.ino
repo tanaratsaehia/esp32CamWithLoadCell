@@ -89,14 +89,14 @@ bool save_image_to_sd(camera_fb_t * fb, const char * path) {
   fs::FS &fs = SD_MMC; 
   File file = fs.open(path, FILE_WRITE);
   if(!file) {
-      Serial.println("Failed to open file for writing");
+      // Serial.println("Failed to open file for writing");
       return false;
   }else {
     file.write(fb->buf, fb->len); // payload (image), payload length
-    Serial.printf("Saved file to path: %s\n", path);
+    // Serial.printf("Saved file to path: %s\n", path);
   }
   file.close();
-  Serial.println("File written");
+  // Serial.println("File written");
   return true;
 }
 

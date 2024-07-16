@@ -4,27 +4,27 @@
 
 void sd_card_init(){
   if (!SD_MMC.begin("/sdcard", true)) {
-    Serial.println("SD Card Mount Failed");
+    // Serial.println("SD Card Mount Failed");
     return;
   }
   uint8_t cardType = SD_MMC.cardType();
   if (cardType == CARD_NONE) {
-    Serial.println("No SD card attached");
+    // Serial.println("No SD card attached");
     return;
   }
 }
 
 void write_CSV(const char* filename, String data) {
-  Serial.println("File : " + String(filename));
+  // Serial.println("File : " + String(filename));
   File file = SD_MMC.open(filename, FILE_APPEND);
   if (!file) {
-    Serial.println("Failed to open file for appending");
+    // Serial.println("Failed to open file for appending");
     return;
   }
   if (file.println(data)) {
-    Serial.println("Data written successfully");
+    // Serial.println("Data written successfully");
   } else {
-    Serial.println("Write failed");
+    // Serial.println("Write failed");
   }
   file.close();
 }
@@ -32,12 +32,12 @@ void write_CSV(const char* filename, String data) {
 void read_CSV(const char* filename) {
   File file = SD_MMC.open(filename);
   if (!file) {
-    Serial.println("Failed to open file for reading");
+    // Serial.println("Failed to open file for reading");
     return;
   }
   while (file.available()) {
     String line = file.readStringUntil('\n');
-    Serial.println(line);
+    // Serial.println(line);
   }
   file.close();
 }
@@ -45,18 +45,17 @@ void read_CSV(const char* filename) {
 void edit_CSV(const char* filename, String condition, String newValue) {
   File file = SD_MMC.open(filename, FILE_READ);
   if (!file) {
-    Serial.println("Failed to open file for reading");
+    // Serial.println("Failed to open file for reading");
     return;
   }
 
-  // Read file into memory
   String fileContent = "";
   while (file.available()) {
     String line = file.readStringUntil('\n');
-    String timestamp = line.substring(0, line.indexOf(',')); // Get the timestamp
+    String timestamp = line.substring(0, line.indexOf(',')); 
     if (timestamp == condition) {
       int lastCommaIndex = line.lastIndexOf(',');
-      line = line.substring(0, lastCommaIndex + 1) + newValue; // Modify the last column
+      line = line.substring(0, lastCommaIndex + 1) + newValue; 
     }
     fileContent += line + "\n";
   }
@@ -65,20 +64,24 @@ void edit_CSV(const char* filename, String condition, String newValue) {
   // Write modified content back to file
   file = SD_MMC.open(filename, FILE_WRITE);
   if (!file) {
-    Serial.println("Failed to open file for writing");
+    // Serial.println("Failed to open file for writing");
     return;
   }
   file.print(fileContent);
   file.close();
 
-  Serial.println("Modified CSV file and updated the last column based on the condition.");
+  // Serial.println("Modified CSV file and updated the last column based on the condition.");
 }
 
-void record_data(const char* &filename, String data){
-  
-}
+// void record_data(const char* filename, String data){
+//   if (is_file_exist(filename)){
+//     // read csv
+//   }else{
+//     write_CSV(filename, data);
+//   }
+// }
 
-void check_record(const String &filename){
+void check_record(const String filename){
   if (is_file_exist(filename)){
     Serial.println("c_file_already_exist");
 
@@ -91,11 +94,11 @@ void check_record(const String &filename){
           
           if (command == "delete_file"){
             SD_MMC.remove(filename);
-            Serial.println("remove file");
+            // Serial.println("remove file");
             break;
           }else if (command == "keep_file"){
             // do nothing
-            Serial.println("keep file");
+            // Serial.println("keep file");
             break;
           }
         }
@@ -106,21 +109,21 @@ void check_record(const String &filename){
   }
 }
 
-bool is_file_exist(const String &filename) {
+bool is_file_exist(const String filename) {
   // Check if the file exists
   if (SD_MMC.exists(filename)) {
-    Serial.println("File exists.");
+    // Serial.println("File exists.");
 
     // Check if the file extension is ".csv"
     if (filename.endsWith(".csv")) {
-      Serial.println("File is a CSV file.");
+      // Serial.println("File is a CSV file.");
       return true;
     } else {
-      Serial.println("File is not a CSV file.");
+      // Serial.println("File is not a CSV file.");
       return false;
     }
   } else {
-    Serial.println("File does not exist.");
+    // Serial.println("File does not exist.");
     return false;
   }
 }

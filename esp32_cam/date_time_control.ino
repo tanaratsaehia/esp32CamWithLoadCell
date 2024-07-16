@@ -13,20 +13,37 @@ String* get_date_time() {
 
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
-    result[0] = "Failed to obtain date";
-    result[1] = "Failed to obtain time";
+    result[0] = "unknow-date";
+    result[1] = "unknow-time";
     date_time_init();
-    return result;
+    get_date_time();
+    Serial.println("can't be here");
+    // return result;
   }
 
   char dateStringBuff[20]; // Buffer to hold the date
   strftime(dateStringBuff, sizeof(dateStringBuff), "%d-%B-%Y", &timeinfo);
   
   char timeStringBuff[10]; // Buffer to hold the time
-  strftime(timeStringBuff, sizeof(timeStringBuff), "%H:%M:%S", &timeinfo);
+  strftime(timeStringBuff, sizeof(timeStringBuff), "%H-%M-%S", &timeinfo);
   
   result[0] = String(dateStringBuff);
   result[1] = String(timeStringBuff);
   
   return result;
+}
+
+void splitTimeString(String timeStr, int* timeArr) {
+  int firstColon = timeStr.indexOf('-');
+  int secondColon = timeStr.indexOf('-', firstColon + 1);
+
+  // Extract hours, minutes, and seconds
+  String hours = timeStr.substring(0, firstColon);
+  String minutes = timeStr.substring(firstColon + 1, secondColon);
+  String seconds = timeStr.substring(secondColon + 1);
+
+  // Convert to integers and store in the array
+  timeArr[0] = hours.toInt();
+  timeArr[1] = minutes.toInt();
+  timeArr[2] = seconds.toInt();
 }

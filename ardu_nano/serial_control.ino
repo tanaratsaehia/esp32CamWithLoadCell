@@ -2,8 +2,10 @@ void read_command(String times){
   while (true){
     if (Serial.available()){
       String command = Serial.readStringUntil("\n");
+      // Serial.println(command);
 
       if (command.startsWith("c_")){
+        Serial.println(command);
         command = command.substring(2);
         command.trim();
 
@@ -41,14 +43,14 @@ void read_command(String times){
               if (disCase){
                 clear_display();
                 display_custom("record deleted", 1, 0);
-                onBuzzer(0.5);
+                onBuzzer(0.1);
                 Serial.println("c_delete_file");
                 while (buttonPressed()){}
                 return;
               }else if (!disCase){
                 clear_display();
                 display_custom("keep record", 2, 0);
-                onBuzzer(0.5);
+                onBuzzer(0.1);
                 Serial.println("c_keep_file");
                 while (buttonPressed()){}
                 return;
@@ -72,16 +74,10 @@ void read_command(String times){
           onBuzzer(0.5);
           // reset mcu here
           return;
-        }
-      }else if (command.startsWith("*wm:")){
-        command = command.substring(4);
-        command.trim();
-
-        if (command == "Starting Web Portal"){
+        }else if (command == "config_wifi"){
           clear_display();
-          display_custom("pls config wifi", 1, 0);
-          display_custom("N:I_Care_Urine", 1, 1);
-          // return;
+          display_custom("Pls config wifi", 1, 0);
+          display_custom("N: I Care Urine", 1, 1);
         }
       }
     }
@@ -89,5 +85,7 @@ void read_command(String times){
     if (times == "one"){
       return;
     }
+
+    // Serial.println("here");
   }
 }
