@@ -100,6 +100,40 @@ bool save_image_to_sd(camera_fb_t * fb, const char * path) {
   return true;
 }
 
+camera_fb_t* read_image_from_sd(String path) {
+  File file = SD_MMC.open(path);
+  if (!file) {
+    Serial.println("Failed to open image file");
+    return nullptr;
+  }
+
+  size_t fileSize = file.size();
+  uint8_t* buffer = (uint8_t*)malloc(fileSize);
+  if (!buffer) {
+    Serial.println("Failed to allocate memory");
+    file.close();
+    return nullptr;
+  }
+
+  file.read(buffer, fileSize);
+  file.close();
+
+  camera_fb_t* fb = (camera_fb_t*)malloc(sizeof(camera_fb_t));
+  if (!fb) {
+    Serial.println("Failed to allocate memory for fb");
+    free(buffer);
+    return nullptr;
+  }
+
+  fb->width = 1600; // You may need to set appropriate values based on your image format
+  fb->height = 1200;
+  fb->buf = buffer;
+  fb->len = fileSize;
+  fb->format = PIXFORMAT_JPEG; // Adjust if necessary
+
+  return fb;
+}
+
 void on_flash(){
   digitalWrite(FLASH_GPIO_NUM, HIGH);
 }
@@ -107,5 +141,3 @@ void on_flash(){
 void off_flash(){
   digitalWrite(FLASH_GPIO_NUM, LOW);
 }
-
-

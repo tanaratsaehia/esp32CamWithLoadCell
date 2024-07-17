@@ -3,17 +3,20 @@
 #include <WiFiManager.h>
 #include <TridentTD_LineNotify.h>
 
-// #define SSID        "D"   // WiFi name
-// #define PASSWORD    "11223344"   // PASSWORD
-#define LINE_TOKEN  "PEz5jDbZCiSVYNiXjMxA72OLiQupMjjmo4Bm3Xthl19" // TOKEN
-#define googleScriptID "https://script.google.com/macros/s/AKfycbzqyLveC_ZVLk_1Jw68CJ-QbS9_JxL7tpTrXkZSc4MDCms5dAxBzHFssmwPOQud6L-a/exec"
+#define LINE_TOKEN  "xlPCf7LajMbAHq0E9xNLST6gZlxnhm4BdaVIi9VwwxE" // TOKEN
+#define googleScriptID "https://script.google.com/macros/s/AKfycbwUHt-JbJW4xp3ubmpTMTsT3LXqvfvpHDDsUUgPyTGBO-lYmXIJhIjyjJyMFid4C-E/exec"
 
 unsigned long millisCouting;
 String record_file_name;
 WiFiManager wm;
 
+bool presentMode = false;
+
 int nextHourRecord;
 int nextMinuteRecord;
+float previousUrineWeight;
+bool firstTimeOpenDevice = true;
+bool stateNotiEightHour = false;
 
 String* dateTime;
 int timeIntArr[3];
@@ -24,7 +27,14 @@ void setup() {
   wm.setTimeout(300);
 
   while (!Serial.available()){}
-  String temp = Serial.readStringUntil('\n');
+  String command = Serial.readStringUntil('\n');
+  if (command.startsWith("c_")){
+    command = command.substring(2);
+    command.trim();
+    if (command == "present_mode"){
+      presentMode = true;
+    }
+  }
   // Serial.println("hi");
   // delay(500);
   // Serial.println("c_config_wifi");
@@ -45,8 +55,8 @@ void setup() {
   LINE.setToken(LINE_TOKEN);
   dateTime = get_date_time();
   splitTimeString(dateTime[1], timeIntArr);
-  nextHourRecord = timeIntArr[0];
-  nextMinuteRecord = timeIntArr[1]+1;
+  nextHourRecord = timeIntArr[0]+1;
+  nextMinuteRecord = timeIntArr[1];
   record_file_name = "/" + dateTime[0] + ".csv";
   // Serial.println(record_file_name);
 
@@ -55,87 +65,136 @@ void setup() {
     // add_initial_data("/testing.csv");
   }
   while (Serial.available()){
-    temp = Serial.readStringUntil('\n');
+    String temp = Serial.readStringUntil('\n');
   }
   check_record(record_file_name);
+  readAndResendCSVRecords(record_file_name.c_str());
+
+  LINE.notify("เครื่องพร้อมใช้งาน");
 }
 
 void loop() {
-  // String* dateTime = get_date_time();
-  // Serial.println(dateTime[0] + " " + dateTime[1]);
+  if (Serial.available()){
+    String command = Serial.readStringUntil('\n');
+    if (command.startsWith("c_")){
+      command = command.substring(2);
+      command.trim();
+      if (command == "batt_loss"){
+        LINE.notify("แบตเตอรี่น้อยกว่า 10% กรุณาชาร์จแบต");
+        delay(60000);
+        return;
+      }
+    }
+  }
 
-  // if (millis() - millisCouting >= 5000) {
-  //   camera_fb_t* pic = get_picture(true);
-  //   delay(250);
-  //   data = "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0,"+String(millis());
-  //   String path = "/picture" + String(millis()) + ".jpg";
-  //   write_CSV(dateTime[0].c_str(), data);
-  //   Serial.println("saving picture to SD card...");
-  //   if (save_image_to_sd(pic, path.c_str())) {
-  //     Serial.println("Picture saved to SD card.");
-  //   } else {
-  //     Serial.println("Failed to save picture to SD card.");
-  //   }
-  //   Serial.println("sending picture...");
-  //   LINE.notifyPicture("testing esp cam...", pic->buf, pic->len);
-  //   Serial.println("picture sent!"); 
-  //   read_CSV(dateTime[0].c_str());
-  //   millisCouting = millis();
-  // }
+  if (firstTimeOpenDevice){
+    firstTimeOpenDevice = false;
+    Serial.println("c_wake_up");
+    float weight = get_weight();
+    previousUrineWeight = weight;
+  }
+
   dateTime = get_date_time();
   splitTimeString(dateTime[1], timeIntArr);
+  String file_name = getFileName(record_file_name);
+  // Serial.println(file_name);
+  if (dateTime[0] != file_name){
+    // Serial.println("change file name");
+    record_file_name = dateTime[0];
+  }
   if (timeIntArr[0] == nextHourRecord & timeIntArr[1] == nextMinuteRecord){
-    nextHourRecord++;
-    // nextMinuteRecord++;
+    // nextHourRecord++;
+    if (presentMode){
+      if (nextMinuteRecord < 60){
+        nextMinuteRecord++;
+      }else if (nextMinuteRecord == 60){
+        nextMinuteRecord = 0;
+      }
+    }else{
+      if (nextHourRecord < 23){
+        nextHourRecord++;
+      }else if (nextHourRecord == 23){
+        nextHourRecord = 0;
+      }
+    }
+    
     Serial.println("c_wake_up");
     camera_fb_t* pic = get_picture(false);
     delay(250);
     float weight = get_weight();
     String pathImg = "/"+dateTime[0]+"_"+dateTime[1]+".jpg";
-    String data = dateTime[0]+","+dateTime[1]+","+String(weight)+","+pathImg+",0";
+    String data = dateTime[0]+","+dateTime[1]+","+String(weight)+","+pathImg;
     if (!save_image_to_sd(pic, pathImg.c_str())) {
       if (!save_image_to_sd(pic, pathImg.c_str())){
         // Serial.println("can't save image");
-        data = dateTime[0]+","+dateTime[1]+","+String(weight)+",N/A,0";
+        data = dateTime[0]+","+dateTime[1]+","+String(weight)+",N/A";
       }
     }
-    // Serial.println("weight : " + String(weight));
-    // Serial.println(data);
-    bool gg_res = sendToGoogleSheets(data);
-    bool line_res = LINE.notifyPicture("testing esp cam...", pic->buf, pic->len);
-
-    if (!gg_res){
-      LINE.notify("can't upload data into google sheet");
+    String notiStr;
+    if (weight - previousUrineWeight < 30){
+      notiStr = "\n!!! ปริมาณปัสสาวะน้อยกว่า 30 มล. !!!\nชั่วโมงที่แล้ว: "+String(previousUrineWeight)+" มล.\nปัจจุบัน: "+String(weight)+" มล.";
+    }else{
+      notiStr = "\nปริมาณปัสสาวะปกติ\nชั่วโมงที่แล้ว: "+String(previousUrineWeight)+" มล.\nปัจจุบัน: "+String(weight)+" มล.";
     }
-
+    bool gg_res = false;
+    bool line_res = false;
+    if (WiFi.status() == WL_CONNECTED){
+      line_res = LINE.notifyPicture(notiStr, pic->buf, pic->len);
+      // gg_res = sendToGoogleSheets(data);
+    }
+    if (gg_res){
+      if (line_res){
+        data = dateTime[0]+","+dateTime[1]+","+String(weight)+","+pathImg+",1,1";
+      }else{
+        data = dateTime[0]+","+dateTime[1]+","+String(weight)+","+pathImg+",0,1";
+      }
+    }else{
+      if (line_res){
+        data = dateTime[0]+","+dateTime[1]+","+String(weight)+","+pathImg+",1,1";
+      }else{
+        data = dateTime[0]+","+dateTime[1]+","+String(weight)+","+pathImg+",0,1";
+      }
+      // LINE.notify("can't upload data into google sheet");
+    }
+    // Serial.println("gg res"+String(gg_res));
     write_CSV(record_file_name.c_str(), data);
+    previousUrineWeight = weight;
+    esp_camera_fb_return(pic);
   }
-}
 
-bool sendToGoogleSheets(String data) {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-
-    http.begin(googleScriptID);
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-    String httpRequestData = "data=" + data;
-    int httpResponseCode = http.POST(httpRequestData);
-
-    if (httpResponseCode > 0) {
-      String response = http.getString();
-      Serial.println(httpResponseCode); // Print return code
-      Serial.println(response);         // Print request answer
-      http.end();
-      return true;
-    } else {
-      // Serial.print("Error on sending POST: ");
-      // Serial.println(httpResponseCode);
-      http.end();
-      return false;
+  if ((timeIntArr[0] == 6 | timeIntArr[0] == 14 | timeIntArr[0] == 22) & timeIntArr[1] == 0 & !stateNotiEightHour){
+    stateNotiEightHour = true;
+    Serial.println("c_wake_up");
+    camera_fb_t* pic = get_picture(false);
+    delay(250);
+    float weight = get_weight();
+    String notiStr = "นี่คือข้อความรายงานผลของปริมาณปัสสาวะตามเวลาเปลี่ยนเวร\nปริมาณปัสสาวะปัจจุบัน: "+String(weight)+" มล.";
+    bool line_res = false;
+    if (WiFi.status() == WL_CONNECTED){
+      line_res = LINE.notifyPicture(notiStr, pic->buf, pic->len);
     }
-  } else {
-    // Serial.println("Error in WiFi connection");
-    return false;
+    esp_camera_fb_return(pic);
+  }
+  if (timeIntArr[1] == 58){
+    stateNotiEightHour = false;
+  }
+  if (timeIntArr[1] % 5 ==0){
+    readAndResendCSVRecords(record_file_name.c_str());
   }
 }
+
+
+String getFileName(String filePath) {
+  int lastSlashIndex = filePath.lastIndexOf('/');
+  int dotIndex = filePath.lastIndexOf('.');
+  
+  if (dotIndex == -1) {
+    // No extension found
+    dotIndex = filePath.length();
+  }
+  
+  String fileName = filePath.substring(lastSlashIndex + 1, dotIndex);
+  return fileName;
+}
+
+

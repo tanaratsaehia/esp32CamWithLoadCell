@@ -39,8 +39,8 @@ float load_cell_get_calibration_factor(){
   Serial.println("Calibration done");
 }
 
-float get_weight(){
-  return scale.get_units();
+float get_weight(int unit){
+  return scale.get_units(unit);
 }
 
 void load_cell_sleep(){

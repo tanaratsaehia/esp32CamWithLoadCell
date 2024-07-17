@@ -145,10 +145,102 @@ bool delete_csv_file(const String filename){
   }
 }
 
+void readAndResendCSVRecords(const char* filename) {
+  File file = SD_MMC.open(filename);
+  if (!file) {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+
+  std::vector<String> lines;
+  while (file.available()) {
+    String line = file.readStringUntil('\n');
+    line.trim();
+    if (line.length() > 0) {
+      lines.push_back(line);
+    }
+  }
+  file.close();
+
+  bool modified = false;
+
+  for (auto& line : lines) {
+    int index1 = line.indexOf(',');
+    int index2 = line.indexOf(',', index1 + 1);
+    int index3 = line.indexOf(',', index2 + 1);
+    int index4 = line.indexOf(',', index3 + 1);
+    int index5 = line.indexOf(',', index4 + 1);
+    int index6 = line.length();
+
+    String date = line.substring(0, index1);
+    String time = line.substring(index1 + 1, index2);
+    String weight = line.substring(index2 + 1, index3);
+    String pathPic = line.substring(index3 + 1, index4);
+    String lineNotiStatus = line.substring(index4 + 1, index5);
+    String ggSheetUploadStatus = line.substring(index5 + 1, index6);
+
+    if (lineNotiStatus == "0" || ggSheetUploadStatus == "0") {
+      camera_fb_t* pic = read_image_from_sd(pathPic); // Read image from SD card
+      
+      if (pic != nullptr) {
+        // String notiStr = "\nCurrent weight: " + weight + " ml\n";
+        String notiStr = "นี่คือข้อความที่ถูกโหลดมาแจ้งเตือนเนื่องจากก่อนหน้านี้เน็ตมีปัญหา\nวันที่/เวลา: "+date+" / "+time+"\nปัสสาวะที่วัดได้: "+weight + " มล.";
+        bool gg_res = false;
+        bool line_res = false;
+
+        if (WiFi.status() == WL_CONNECTED) {
+          line_res = LINE.notifyPicture(notiStr, pic->buf, pic->len);
+          // gg_res = sendToGoogleSheets(date + "," + time + "," + weight + "," + pathPic + "," + lineNotiStatus + "," + ggSheetUploadStatus);
+        }
+
+        if (gg_res) {
+          if (line_res) {
+            line = date + "," + time + "," + weight + "," + pathPic + ",1,1";
+          } else {
+            line = date + "," + time + "," + weight + "," + pathPic + ",0,1";
+          }
+        } 
+        // else {
+        //   if (line_res) {
+        //     line = date + "," + time + "," + weight + "," + pathPic + ",1,0";
+        //   } else {
+        //     line = date + "," + time + "," + weight + "," + pathPic + ",0,0";
+        //   }
+        // }
+        else {
+          if (line_res) {
+            line = date + "," + time + "," + weight + "," + pathPic + ",1,1";
+          } else {
+            line = date + "," + time + "," + weight + "," + pathPic + ",0,1";
+          }
+        }
+        free(pic->buf); // Free the allocated buffer
+        free(pic);      // Free the pic structure
+
+        modified = true;
+      } else {
+        Serial.println("Failed to read image from SD card");
+      }
+    }
+  }
+
+  if (modified) {
+    // Rewrite the entire CSV file with updated data
+    file = SD_MMC.open(filename, FILE_WRITE);
+    if (!file) {
+      Serial.println("Failed to open file for writing");
+      return;
+    }
+
+    for (const auto& line : lines) {
+      file.println(line);
+    }
+    file.close();
+  }
+}
+
 void add_initial_data(const char* filename) {
   // csv format date,time,weight,path_pic,upload_status
-  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
-  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
-  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
-  write_CSV(filename, "'15-July-2024','11:36:44',330.5,'/picture5588.jpg',0");
+  write_CSV(filename, "17-July-2024,11-36-44,330.5,'/picture5588.jpg,0,0");
+  write_CSV(filename, "17-July-2024,11-36-44,330.5,'/picture5588.jpg,0,0");
 }

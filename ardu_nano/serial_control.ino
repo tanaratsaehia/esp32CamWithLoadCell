@@ -78,6 +78,22 @@ void read_command(String times){
           clear_display();
           display_custom("Pls config wifi", 1, 0);
           display_custom("N: I Care Urine", 1, 1);
+        }else if (command == "wake_up"){
+          Serial.println("c_weight_"+String(get_weight(10)));
+          while (true){
+            if (Serial.available()){
+              String command = Serial.readStringUntil('\n');
+              if (command.startsWith("c_")){
+                command = command.substring(2);
+                command.trim();
+                if (command == "weight_ok"){
+                  return;
+                }
+              }
+            }else{
+              Serial.println("c_weight_"+String(get_weight(10)));
+            }
+          }
         }
       }
     }

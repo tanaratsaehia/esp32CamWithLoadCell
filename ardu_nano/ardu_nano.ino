@@ -9,6 +9,7 @@ unsigned long sleepModeMillis;
 unsigned long displayMillis;
 unsigned long timeOutSerialMillis;
 unsigned long presentModeMillis;
+unsigned long waitNotiBattLoss;
 
 void setup() {
   Serial.begin(115200);
@@ -29,9 +30,11 @@ void setup() {
       onBuzzer(0.05);
       onBuzzer(0.05);
       presentMode = true;
+      Serial.println("c_present_mode");
       clear_display();
       display_custom("present mode", 2, 0);
       display_custom("ready now!", 3, 1);
+      while (buttonPressed()){}
     }
   }
   load_cell_init();
@@ -60,6 +63,12 @@ void loop() {
     display_batt_and_weight();
   }
   sleepModeEvent();
+  if (get_batt_percent() > 10){
+    waitNotiBattLoss = millis();
+  }else if (get_batt_percent() < 10 & millis() - waitNotiBattLoss >= 2000){
+    Serial.println("c_batt_loss");
+  }
+  read_command("one");
 }
 
 void sleepModeEvent(){
