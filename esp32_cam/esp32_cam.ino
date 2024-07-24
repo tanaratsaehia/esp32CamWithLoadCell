@@ -55,15 +55,21 @@ void setup() {
   LINE.setToken(LINE_TOKEN);
   dateTime = get_date_time();
   splitTimeString(dateTime[1], timeIntArr);
-  nextHourRecord = timeIntArr[0]+1;
-  nextMinuteRecord = timeIntArr[1];
+  if (presentMode){
+    nextHourRecord = timeIntArr[0];
+    nextMinuteRecord = timeIntArr[1]+1;
+  }else{
+    nextHourRecord = timeIntArr[0]+1;
+    nextMinuteRecord = timeIntArr[1];
+  }
+  
   record_file_name = "/" + dateTime[0] + ".csv";
   // Serial.println(record_file_name);
 
-  if (!is_file_exist(record_file_name)){
-    add_initial_data(record_file_name.c_str());
-    // add_initial_data("/testing.csv");
-  }
+  // if (!is_file_exist(record_file_name)){
+  //   add_initial_data(record_file_name.c_str());
+  //   // add_initial_data("/testing.csv");
+  // }
   while (Serial.available()){
     String temp = Serial.readStringUntil('\n');
   }
